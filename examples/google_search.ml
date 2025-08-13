@@ -2,12 +2,13 @@ open Webdriver_cohttp_lwt_unix
 open Webdriver_cohttp_lwt_unix.Infix
 
 let sleep dt =
-  Printf.printf ".%!" ;
+  Printf.printf ".%!";
   lift (Lwt_unix.sleep dt)
 
 let rec wait cmd =
-  Error.catch (fun () -> cmd)
-    ~errors:[`no_such_element]
+  Error.catch
+    (fun () -> cmd)
+    ~errors:[ `no_such_element ]
     (fun _ -> sleep 0.1 >>= fun () -> wait cmd)
 
 let wait_for_error cmd =
@@ -19,18 +20,15 @@ let wait_for_error cmd =
         loop ()
       in
       loop ())
-    ~errors:[`no_such_element]
+    ~errors:[ `no_such_element ]
     (fun _ -> return ())
-
 
 let rec wait_for_condition fn =
   let* b = fn () in
-  if b
-  then return ()
-  else begin
+  if b then return ()
+  else
     let* () = sleep 0.1 in
     wait_for_condition fn
-  end
 
 let rec list_iter f = function
   | [] -> return ()
@@ -53,15 +51,14 @@ let accept_cookies =
   let* popup = wait (find_first `css "#xe7COe") in
   let* btn = wait (find_first `css "#L2AGLb") in
   let* disp = is_displayed btn in
-  assert (disp = true) ;
+  assert (disp = true);
   let* () = click btn in
   let* () =
-    wait_for_condition
-      (fun () ->
+    wait_for_condition (fun () ->
         let* disp = is_displayed btn in
         let+ visible = css popup "display" in
         let is_visible = visible = "none" in
-        assert (is_visible = disp) ;
+        assert (is_visible = disp);
         disp)
   in
   Cookie.all
@@ -71,11 +68,11 @@ let search query =
   let* () = send_keys input (query ^ Key.enter) in
   let* results = wait (find_first `xpath "//div[@id='search']") in
   let* links = find_all ~from:results `tag_name "h3" in
-  Printf.printf "found %i results\n%!" (List.length links) ;
+  Printf.printf "found %i results\n%!" (List.length links);
   list_iter
     (fun link ->
       let* txt = text link in
-      Printf.printf "- %s\n%!" txt ;
+      Printf.printf "- %s\n%!" txt;
       return ())
     links
 
@@ -91,13 +88,12 @@ let search_with_cookies cookies =
   let* () = goto "https://google.com" in
   search "webdriver"
 
-
 let host = "http://localhost:4444/wd/hub"
 let run cmd = Lwt_main.run (run ~host Capabilities.firefox_headless cmd)
 
 let () =
-  Printf.printf "### Accept the cookies\n%!" ;
+  Printf.printf "### Accept the cookies\n%!";
   let cookies = run search_without_cookies in
-  Printf.printf "\n%!" ;
-  Printf.printf "### Reuse the %i cookies\n%!" (List.length cookies) ;
+  Printf.printf "\n%!";
+  Printf.printf "### Reuse the %i cookies\n%!" (List.length cookies);
   run (search_with_cookies cookies)

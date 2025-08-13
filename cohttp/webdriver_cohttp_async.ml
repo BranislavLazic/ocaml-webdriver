@@ -7,15 +7,12 @@ module Client = struct
   let return = Deferred.return
   let map f t = Deferred.map ~f t
   let bind f m = Deferred.( >>= ) m f
-
   let ( let* ) m fn = Deferred.( >>= ) m fn
-
   let fail e = raise e
+
   let catch f handle =
     let* x = Async.try_with f in
-    match x with
-    | Ok x -> return x
-    | Error e -> handle e
+    match x with Ok x -> return x | Error e -> handle e
 
   let get url =
     let* _resp, body = Client.get (Uri.of_string url) in

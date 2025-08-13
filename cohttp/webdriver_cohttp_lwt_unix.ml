@@ -7,7 +7,6 @@ module Client = struct
   let map = Lwt.map
   let bind f m = Lwt.( >>= ) m f
   let ( let* ) m fn = Lwt.( >>= ) m fn
-
   let fail = Lwt.fail
   let catch = Lwt.catch
 
@@ -17,8 +16,7 @@ module Client = struct
 
   let post url body =
     let* _resp, body =
-      Client.post
-        ~chunked:false
+      Client.post ~chunked:false
         ~headers:(Cohttp.Header.init_with "Content-Type" "application/json")
         ~body:(Cohttp_lwt__Body.of_string body)
         (Uri.of_string url)
